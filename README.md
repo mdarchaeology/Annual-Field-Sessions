@@ -2,6 +2,9 @@
 Customize your Leaflet story map with linked Google Sheets template and scrolling narrative.
 Supports images, audio and video embeddings, and Leaflet TileLayer/geojson overlays.
 
+https://docs.google.com/spreadsheets/d/1-tQrqBr7j8Lwo8z_Lr28IwZkOxcuKvZ-UqnCygiOjyE/edit#gid=0
+
+
 ![Demo Screenshot](media/screenshot.jpg)
 
 ## [Live Demo](https://mdarchaeology.github.io/leaflet-storymaps-with-google-sheets/)
