@@ -107,7 +107,11 @@ $(window).on('load', function() {
 
     for (i in chapters) {
       var c = chapters[i];
-
+      var popupS = String(c['Chapter'])
+      var popup = L.popup()
+        .setLatLng([c['Latitude'], c['Longitude']])
+        .setContent(popupS)
+    .openOn(mymap);
       if ( !isNaN(parseFloat(c['Latitude'])) && !isNaN(parseFloat(c['Longitude']))) {
         var lat = parseFloat(c['Latitude']);
         var lon = parseFloat(c['Longitude']);
@@ -122,7 +126,6 @@ $(window).on('load', function() {
           }
         ));        
       } else {
-        marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
         markers.push(null);
       }
 
