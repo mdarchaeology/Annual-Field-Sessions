@@ -120,9 +120,9 @@ $(window).on('load', function() {
               markerColor: 'blue'
             })
           }
-        ));
-        marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
+        ));        
       } else {
+        marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
         markers.push(null);
       }
 
