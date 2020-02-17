@@ -107,9 +107,9 @@ $(window).on('load', function() {
 
     for (i in chapters) {
       var c = chapters[i];
-      var popupS = String(c['Chapter'])
+      var popupS = 'Test Popup'
       var popup = L.popup()
-        .setLatLng([c['Latitude'], c['Longitude']])
+        .setLatLng([39.026570, -76.605500)
         .setContent(popupS)
     .openOn(mymap);
       if ( !isNaN(parseFloat(c['Latitude'])) && !isNaN(parseFloat(c['Longitude']))) {
