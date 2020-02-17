@@ -107,7 +107,6 @@ $(window).on('load', function() {
 
     for (i in chapters) {
       var c = chapters[i];
-    .openOn(mymap);
       if ( !isNaN(parseFloat(c['Latitude'])) && !isNaN(parseFloat(c['Longitude']))) {
         var lat = parseFloat(c['Latitude']);
         var lon = parseFloat(c['Longitude']);
