@@ -62,6 +62,64 @@ $(window).on('load', function() {
     }).addTo(map);
   }
 
+  // allow for multiple image containers to be created
+  // chapter, int
+  function createImageContainer(c, imageNumber) {
+    // Add media and credits: YouTube, audio, or image
+    var media = null;
+    var mediaContainer = null;
+
+    // Add media source
+    var source = $('<a>', {
+      text: c['Media Credit ' + imageNumber],
+      href: c['Media Credit Link ' + imageNumber],
+      target: "_blank",
+      class: 'source'
+    });
+
+    // YouTube
+    if (c['Media Link ' + imageNumber].indexOf('youtube.com/') > -1) {
+      media = $('<iframe></iframe>', {
+        src: c['Media Link ' + imageNumber],
+        width: '100%',
+        height: '100%',
+        frameborder: '0',
+        allow: 'autoplay; encrypted-media',
+        allowfullscreen: 'allowfullscreen',
+      });
+
+      mediaContainer = $('<div></div', {
+        class: 'img-container'
+      }).append(media).after(source);
+    }
+
+    // If not YouTube: either audio or image
+    var mediaTypes = {
+      'jpg': 'img',
+      'jpeg': 'img',
+      'png': 'img',
+      'mp3': 'audio',
+      'ogg': 'audio',
+      'wav': 'audio',
+    }
+
+    var mediaExt = c['Media Link ' + imageNumber].split('.').pop();
+    var mediaType = mediaTypes[mediaExt];
+
+    if (mediaType) {
+      media = $('<' + mediaType + '>', {
+        src: c['Media Link ' + imageNumber],
+        controls: mediaType == 'audio' ? 'controls' : '',
+      });
+      mediaContainer = $('<div></div', {
+        class: mediaType + '-container'
+      }).append(media).after(source);
+    }
+
+    return [mediaContainer, source];
+
+  }
+
   function initMap() {
     var options = mapData.sheets(constants.optionsSheetName).elements;
     createDocumentSettings(options);
@@ -71,7 +129,6 @@ $(window).on('load', function() {
     narrativeWidth = parseInt(getSetting('_narrativeWidth'));
     if (narrativeWidth > 0 && narrativeWidth < 100) {
       var mapWidth = 100 - narrativeWidth;
-
       $('#narration, #title').css('width', narrativeWidth + 'vw');
       $('#map').css('width', mapWidth + 'vw');
     } */
@@ -119,7 +176,7 @@ $(window).on('load', function() {
               markerColor: 'blue'
             })
           }
-        ));        
+        ));
       } else {
         markers.push(null);
       }
@@ -130,64 +187,20 @@ $(window).on('load', function() {
         class: 'chapter-container'
       });
 
-
-      // Add media and credits: YouTube, audio, or image
-      var media = null;
-      var mediaContainer = null;
-
-      // Add media source
-      var source = $('<a>', {
-        text: c['Media Credit'],
-        href: c['Media Credit Link'],
-        target: "_blank",
-        class: 'source'
-      });
-
-      // YouTube
-      if (c['Media Link'].indexOf('youtube.com/') > -1) {
-        media = $('<iframe></iframe>', {
-          src: c['Media Link'],
-          width: '100%',
-          height: '100%',
-          frameborder: '0',
-          allow: 'autoplay; encrypted-media',
-          allowfullscreen: 'allowfullscreen',
-        });
-
-        mediaContainer = $('<div></div', {
-          class: 'img-container'
-        }).append(media).after(source);
-      }
-
-      // If not YouTube: either audio or image
-      var mediaTypes = {
-        'jpg': 'img',
-        'jpeg': 'img',
-        'png': 'img',
-        'mp3': 'audio',
-        'ogg': 'audio',
-        'wav': 'audio',
-      }
-
-      var mediaExt = c['Media Link'].split('.').pop();
-      var mediaType = mediaTypes[mediaExt];
-
-      if (mediaType) {
-        media = $('<' + mediaType + '>', {
-          src: c['Media Link'],
-          controls: mediaType == 'audio' ? 'controls' : '',
-        });
-
-        mediaContainer = $('<div></div', {
-          class: mediaType + '-container'
-        }).append(media).after(source);
-      }
+      media_arr = createImageContainer(c, 1)
+      media2_arr = createImageContainer(c, 2)
+      media = media_arr[0]
+      source = media_arr[1]
+      media2 = media2_arr[0]
+      source2 = media2_arr[1]
 
       container
         .append('<p class="chapter-header">' + c['Chapter'] + '</p>')
-        .append(media ? mediaContainer : '')
+        .append(media ? media : '')
         .append(media ? source : '')
-        .append('<p class="description">' + c['Description'] + '</p>');
+        .append('<p class="description">' + c['Description'] + '</p>')
+        .append(media2 ? media2 : '')
+        .append(media2 ? source2 : '');
 
       $('#contents').append(container);
 
@@ -332,6 +345,7 @@ $(window).on('load', function() {
     $('div#container0').addClass("in-focus");
     $('div#contents').animate({scrollTop: '1px'});
   }
+
 
 
   /**
