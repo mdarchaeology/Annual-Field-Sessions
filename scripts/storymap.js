@@ -4,12 +4,6 @@ $(window).on('load', function() {
   // Some constants, such as default settings
   const CHAPTER_ZOOM = 15;
 
-  // This watches for the scrollable container
-  var scrollPosition = 0;
-  $('div#contents').scroll(function() {
-    scrollPosition = $(this).scrollTop();
-  });
-
   // First, try reading Options.csv
   $.get('csv/Options.csv', function(options) {
 
@@ -26,22 +20,22 @@ $(window).on('load', function() {
     var parse = function(res) {
       return Papa.parse(Papa.unparse(res[0].values), {header: true} ).data;
     }
-  
+
     // First, try reading data from the Google Sheet
     if (typeof googleDocURL !== 'undefined' && googleDocURL) {
-  
+
       if (typeof googleApiKey !== 'undefined' && googleApiKey) {
-  
+
         var apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'
         var spreadsheetId = googleDocURL.split('/d/')[1].split('/')[0];
-  
+
         $.when(
           $.getJSON(apiUrl + spreadsheetId + '/values/Options?key=' + googleApiKey),
           $.getJSON(apiUrl + spreadsheetId + '/values/Chapters?key=' + googleApiKey),
         ).then(function(options, chapters) {
           initMap(parse(options), parse(chapters))
         })
-  
+
       } else {
         alert('You load data from a Google Sheet, you need to add a free Google API key')
       }
@@ -49,7 +43,7 @@ $(window).on('load', function() {
     } else {
       alert('You need to specify a valid Google Sheet (googleDocURL)')
     }
-  
+
   })
 
 
@@ -177,72 +171,99 @@ $(window).on('load', function() {
         class: 'chapter-container'
       });
 
+      // allow for creation of more than one image container
+      function createImageContainer(imageNumber) {
+        // Add media and credits: YouTube, audio, or image
+        var media = null;
+        var mediaContainer = null;
 
-      // Add media and credits: YouTube, audio, or image
-      var media = null;
-      var mediaContainer = null;
+        // Add media source
+        var source = '';
+        if (c['Media Credit Link ' + imageNumber]) {
+          source = $('<a>', {
+            text: c['Media Credit ' + imageNumber],
+            href: c['Media Credit Link ' + imageNumber],
+            target: "_blank",
+            class: 'source'
+          });
+        } else {
+          source = $('<span>', {
+            text: c['Media Credit ' + imageNumber],
+            class: 'source'
+          });
+        }
 
-      // Add media source
-      var source = '';
-      if (c['Media Credit Link']) {
-        source = $('<a>', {
-          text: c['Media Credit'],
-          href: c['Media Credit Link'],
-          target: "_blank",
-          class: 'source'
-        });
-      } else {
-        source = $('<span>', {
-          text: c['Media Credit'],
-          class: 'source'
-        });
+        // YouTube
+        if (c['Media Link ' + imageNumber] && c['Media Link ' + imageNumber].indexOf('youtube.com/') > -1) {
+          media = $('<iframe></iframe>', {
+            src: c['Media Link ' + imageNumber],
+            width: '100%',
+            height: '100%',
+            frameborder: '0',
+            allow: 'autoplay; encrypted-media',
+            allowfullscreen: 'allowfullscreen',
+          });
+
+          mediaContainer = $('<div></div', {
+            class: 'img-container'
+          }).append(media).after(source);
+        }
+
+        // If not YouTube: either audio or image
+        var mediaTypes = {
+          'jpg': 'img',
+          'jpeg': 'img',
+          'png': 'img',
+          'tiff': 'img',
+          'gif': 'img',
+          'mp3': 'audio',
+          'ogg': 'audio',
+          'wav': 'audio',
+        }
+
+        var mediaExt = c['Media Link ' + imageNumber] ? c['Media Link ' + imageNumber].split('.').pop().toLowerCase() : '';
+        var mediaType = mediaTypes[mediaExt];
+
+        if (mediaType) {
+          media = $('<' + mediaType + '>', {
+            src: c['Media Link ' + imageNumber],
+            controls: mediaType === 'audio' ? 'controls' : '',
+            alt: c['Chapter']
+          });
+
+          var enableLightbox = getSetting('_enableLightbox') === 'yes' ? true : false;
+          if (enableLightbox && mediaType === 'img') {
+            var lightboxWrapper = $('<a></a>', {
+              'data-lightbox': c['Media Link ' + imageNumber],
+              'href': c['Media Link ' + imageNumber],
+              'data-title': c['Chapter'],
+              'data-alt': c['Chapter'],
+            });
+            media = lightboxWrapper.append(media);
+          }
+
+          mediaContainer = $('<div></div', {
+            class: mediaType + '-container'
+          }).append(media).after(source);
+        }
+
+        return [mediaContainer, source];
       }
 
-      // YouTube
-      if (c['Media Link'] && c['Media Link'].indexOf('youtube.com/') > -1) {
-        media = $('<iframe></iframe>', {
-          src: c['Media Link'],
-          width: '100%',
-          height: '100%',
-          frameborder: '0',
-          allow: 'autoplay; encrypted-media',
-          allowfullscreen: 'allowfullscreen',
-        });
-
-        mediaContainer = $('<div></div', {
-          class: 'img-container'
-        }).append(media).after(source);
-      }
-
-      // If not YouTube: either audio or image
-      var mediaTypes = {
-        'jpg': 'img',
-        'jpeg': 'img',
-        'png': 'img',
-        'mp3': 'audio',
-        'ogg': 'audio',
-        'wav': 'audio',
-      }
-
-      var mediaExt = c['Media Link'] ? c['Media Link'].split('.').pop().toLowerCase() : '';
-      var mediaType = mediaTypes[mediaExt];
-
-      if (mediaType) {
-        media = $('<' + mediaType + '>', {
-          src: c['Media Link'],
-          controls: mediaType == 'audio' ? 'controls' : '',
-        });
-
-        mediaContainer = $('<div></div', {
-          class: mediaType + '-container'
-        }).append(media).after(source);
-      }
+      mediaArr = createImageContainer(1);
+      mediaArr2 = createImageContainer(2);
+      mediaContainer = mediaArr[0];
+      source = mediaArr[1];
+      mediaContainer2 = mediaArr2[0];
+      source2 = mediaArr2[1];
 
       container
         .append('<p class="chapter-header">' + c['Chapter'] + '</p>')
-        .append(media ? mediaContainer : '')
-        .append(media ? source : '')
-        .append('<p class="description">' + c['Description'] + '</p>');
+        .append(mediaContainer ? mediaContainer : '')
+        .append(mediaContainer ? source : '')
+        .append('<p class="description">' + c['Description'] + '</p>')
+        .append(mediaContainer2 ? mediaContainer2 : '')
+        .append(mediaContainer2 ? source : '');
 
       $('#contents').append(container);
 
@@ -275,11 +296,14 @@ $(window).on('load', function() {
       }
 
       for (var i = 0; i < pixelsAbove.length - 1; i++) {
-        
         if ( currentPosition >= pixelsAbove[i]
           && currentPosition < (pixelsAbove[i+1] - 2 * chapterContainerMargin)
           && currentlyInFocus != i
         ) {
+
+          // Update URL hash
+          location.hash = i + 2;
+
           // Remove styling for the old in-focus chapter and
           // add it to the new active chapter
           $('.chapter-container').removeClass("in-focus").addClass("out-focus");
@@ -302,25 +326,26 @@ $(window).on('load', function() {
 
           // Add chapter's overlay tiles if specified in options
           if (c['Overlay']) {
-            var opacity = (c['Overlay Transparency'] !== '') ? parseFloat(c['Overlay Transparency']) : 1;
+
+            var opacity = parseFloat(c['Overlay Transparency']) || 1;
             var url = c['Overlay'];
 
-            if (url.split('.').pop() == 'geojson') {
+            if (url.split('.').pop() === 'geojson') {
               $.getJSON(url, function(geojson) {
                 overlay = L.geoJson(geojson, {
                   style: function(feature) {
                     return {
-                      fillColor: feature.properties.COLOR,
-                      weight: 1,
-                      opacity: 0.5,
-                      color: feature.properties.COLOR,
-                      fillOpacity: 0.5,
+                      fillColor: feature.properties.fillColor || '#ffffff',
+                      weight: feature.properties.weight || 1,
+                      opacity: feature.properties.opacity || opacity,
+                      color: feature.properties.color || '#cccccc',
+                      fillOpacity: feature.properties.fillOpacity || 0.5,
                     }
                   }
                 }).addTo(map);
               });
             } else {
-              overlay = L.tileLayer(c['Overlay'], {opacity: opacity}).addTo(map);
+              overlay = L.tileLayer(c['Overlay'], { opacity: opacity }).addTo(map);
             }
 
           }
@@ -344,11 +369,11 @@ $(window).on('load', function() {
               geoJsonOverlay = L.geoJson(geojson, {
                 style: function(feature) {
                   return {
-                    fillColor: feature.properties.COLOR || props.fillColor || 'white',
-                    weight: props.weight || 1,
-                    opacity: props.opacity || 0.5,
-                    color: feature.properties.COLOR || props.color || 'silver',
-                    fillOpacity: props.fillOpacity || 0.5,
+                    fillColor: feature.properties.fillColor || props.fillColor || '#ffffff',
+                    weight: feature.properties.weight || props.weight || 1,
+                    opacity: feature.properties.opacity || props.opacity || 0.5,
+                    color: feature.properties.color || props.color || '#cccccc',
+                    fillOpacity: feature.properties.fillOpacity || props.fillOpacity || 0.5,
                   }
                 }
               }).addTo(map);
@@ -358,7 +383,10 @@ $(window).on('load', function() {
           // Fly to the new marker destination if latitude and longitude exist
           if (c['Latitude'] && c['Longitude']) {
             var zoom = c['Zoom'] ? c['Zoom'] : CHAPTER_ZOOM;
-            map.flyTo([c['Latitude'], c['Longitude']], zoom);
+            map.flyTo([c['Latitude'], c['Longitude']], zoom, {
+              animate: true,
+              duration: 2, // default is 2 seconds
+            });
           }
 
           // No need to iterate through the following chapters
@@ -423,6 +451,13 @@ $(window).on('load', function() {
     $('div#container0').addClass("in-focus");
     $('div#contents').animate({scrollTop: '1px'});
 
+    // On first load, check hash and if it contains an number, scroll down
+    if (parseInt(location.hash.substr(1))) {
+      var containerId = parseInt( location.hash.substr(1) ) - 2;
+      $('#contents').animate({
+        scrollTop: $('#container' + containerId).offset().top
+      }, 2000);
+    }
 
     // Add Google Analytics if the ID exists
     var ga = getSetting('_googleAnalytics');
@@ -430,7 +465,6 @@ $(window).on('load', function() {
       var gaScript = document.createElement('script');
       gaScript.setAttribute('src','https://www.googletagmanager.com/gtag/js?id=' + ga);
       document.head.appendChild(gaScript);
-  
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
@@ -450,7 +484,6 @@ $(window).on('load', function() {
       // Show Google Sheet URL if the variable exists and is not empty, otherwise link to Chapters.csv
       + (typeof googleDocURL !== 'undefined' && googleDocURL ? googleDocURL : './csv/Chapters.csv')
       + '" target="_blank">data</a>';
-    
     var name = getSetting('_authorName');
     var url = getSetting('_authorURL');
 
